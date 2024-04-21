@@ -69,12 +69,12 @@ void HandleCollision(uint8_t bumpSensor){
    Clock_Delay1ms(1500);
 }
 
-void main_tx_main(void) {
+void main_tx(void) {
   Clock_Init48MHz();
   UART0_Init();
   LaunchPad_Init();
   Motor_Init();     // your function
-  BumpInt_Init(&HandleCollision);      // bump switches
+  Bump_Init(&HandleCollision);      // bump switches
   EnableInterrupts();
 
   char inData[SIZE];

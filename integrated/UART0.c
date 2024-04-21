@@ -75,7 +75,7 @@ void UART0_Init(void){
                                  // N = clock/baud rate = 12,000,000/9600 = 1250
 
 
-  EUSCI_A0->BRW = 1250;           // UCBR = baud rate = int(N) = 104
+  EUSCI_A0->BRW = 104;           // UCBR = baud rate = int(N) = 104
 
   EUSCI_A0->MCTLW &= ~0xFFF1;    // clear first and second modulation stage bit fields
   P1->SEL0 |= 0x0C;

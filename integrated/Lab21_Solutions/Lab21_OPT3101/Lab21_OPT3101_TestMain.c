@@ -59,7 +59,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 // Select one of the following three output possibilities
 // define USENOKIA
 #define USEOLED 1
-//#define USEUART
+#define USEUART 1
 
 #ifdef USENOKIA
 // this batch configures for LCD
@@ -557,6 +557,7 @@ void main(void){ // wallFollow wall following implementation
   Mode = 0;
   I2CB1_Init(30); // baud rate = 12MHz/30=400kHz
   Init();
+  Motor_Init();
   Clear();
   OutString("OPT3101");
   SetCursor(0, 1);
@@ -583,7 +584,7 @@ void main(void){ // wallFollow wall following implementation
   LPF_Init2(100,8);
   LPF_Init3(100,8);
   UR = UL = PWMNOMINAL; //initial power
-  Pause();
+//  Pause();
   EnableInterrupts();
   while(1){
     if(Bump_Read()){ // collision
