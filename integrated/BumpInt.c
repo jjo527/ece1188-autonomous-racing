@@ -56,7 +56,7 @@ void (*BumpTask)(uint8_t);
 // Activate interface pullup
 // pins 7,6,5,3,2,0
 // Interrupt on falling edge (on touch)
-void BumpInt_Init(void(*task)(uint8_t)){
+void Bump_Init(void(*task)(uint8_t)){
     // write this as part of Lab 14
     P4->SEL0 &= ~0xED;
     P4->SEL1 &= ~0xED;    // configure sensors as GPIO
