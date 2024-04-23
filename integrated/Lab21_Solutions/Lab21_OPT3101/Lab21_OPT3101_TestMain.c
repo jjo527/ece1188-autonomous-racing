@@ -56,10 +56,26 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "../inc/UART0.h"
 #include "../inc/SSD1306.h"
 #include "../inc/FFT.h"
+
+#include "../inc/SysTickInts.h"
+
+
+// --------------------------------------
+
+
+//void SysTick_Handler(void) {
+//
+//    int a = 1;
+//    int b = 10 + a;
+//}
+
+// --------------------------------------
+
+
 // Select one of the following three output possibilities
 // define USENOKIA
 #define USEOLED 1
-#define USEUART 1
+#define USEUART 0
 
 #ifdef USENOKIA
 // this batch configures for LCD
@@ -546,10 +562,10 @@ void Pause(void){int i;
 
 }
 
-void main(void){ // wallFollow wall following implementation
+void main_21(void){ // wallFollow wall following implementation
   int i = 0;
   uint32_t channel = 1;
-  DisableInterrupts();
+//  DisableInterrupts();
   Clock_Init48MHz();
   Bump_Init();
   LaunchPad_Init(); // built-in switches and LEDs
