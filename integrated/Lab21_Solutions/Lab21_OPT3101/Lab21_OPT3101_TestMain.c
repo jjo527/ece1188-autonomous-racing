@@ -52,7 +52,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "../inc/opt3101.h"
 #include "../inc/LaunchPad.h"
 #include "../inc/Bump.h"
-#include "../inc/Motor.h"
+//#include "../inc/Motor.h"
 #include "../inc/UART0.h"
 #include "../inc/SSD1306.h"
 #include "../inc/FFT.h"
@@ -66,7 +66,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "../inc/PWM.h"
 #include "../inc/LaunchPad.h"
 #include "../inc/UART0.h"
-#include "../inc/Motor.h"
+//#include "../inc/Motor.h"
 #include "../inc/Bump.h"
 #include "../inc/ADC14.h"
 #include "../inc/TimerA1.h"
@@ -111,7 +111,6 @@ void SysTick_Handler(void) {
     }else if(newCommand == 's'){
         command = newCommand;
     }
-
 
 }
 
@@ -581,7 +580,7 @@ void Controller(void) { // runs at 100 Hz
 //        ActualR = 2000000/avg(RightTach, TACHBUFF);
         snprintf(motorValues, 50, " Left PWM: %d , Right PWM: %d, Left Actual: %d, Right Actual: %d\n", UL, UR);
         UART0_OutString(motorValues);
-        Motor_Forward(UL, UR);
+//        Motor_Forward(UL, UR);
 
     }
 }
@@ -617,12 +616,12 @@ void main(void){ // wallFollow wall following implementation
   Clock_Init48MHz();
   BumpInt_Init(&collision);
 //  LaunchPad_Init(); // built-in switches and LEDs
-  Motor_Stop(); // initialize and stop
+//  Motor_Stop(); // initialize and stop
   Mode = 1;
   I2CB1_Init(30); // baud rate = 12MHz/30=400kHz
   Init();
-  Motor_Init();
-  SysTick_Init(48000,2);
+//  Motor_Init();
+  SysTick_Init(4800,2);
   Clear();
   OutString("OPT3101");
   SetCursor(0, 1);
@@ -652,13 +651,37 @@ void main(void){ // wallFollow wall following implementation
 //  Pause();
   EnableInterrupts();
 
-//  while(command != 'g'){
-//      command = UART0_InChar();
-//      UART0_OutChar(command);
-//  }
+  uint8_t data;
 
   while(1){
+
+//      data = Reflectance_Read(1000);
+
+//    if(Reflectance_Read(1000) == 0x00){
+//
+//
+////        Motor_Forward(5000, 5000);
+////        Clock_Delay1ms(500);
+//
+//
+//        while(1){
+//            if(Reflectance_Read(1000) > 0x00){
+////                Motor_Stop();
+//            }
+//        }
+//
+//
+//
+//
+//
+////        UART0_OutString("I SEE WHITE STOPPPPPP\n\r");
+////        Motor_Stop();
+////        break;
+//    }
+
       if(command == 'g'){
+
+
           if(TxChannel <= 2){ // 0,1,2 means new data
             if(TxChannel==0){
               if(Amplitudes[0] > 1000){
@@ -700,14 +723,16 @@ void main(void){ // wallFollow wall following implementation
 
           WaitForInterrupt();
       }else if(command == 's'){
-          Motor_Stop();
+//          Motor_Stop();
       }
 
   }
+
+//  Motor_Stop();
 }
 
 
 void collision(uint8_t bump){
-    Motor_Stop(); //STOP IF BUMP IS DETECTED
+//    Motor_Stop(); //STOP IF BUMP IS DETECTED
 }
 
