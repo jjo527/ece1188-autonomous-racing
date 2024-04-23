@@ -54,8 +54,23 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "../inc/TExaS.h"
 #include "../inc/BumpInt.h"
 
+#include "mqtt_main.h"
+
+// Standard includes
+#include <stdlib.h>
+#include <string.h>
+
+#include "driverlib.h"
+#include "simplelink.h"
+#include "sl_common.h"
+#include "MQTTClient.h"
+
+
 
 #define SIZE 20
+
+extern Client hMQTTClient;
+extern
 
 uint8_t CollisionData, CollisionFlag;  // mailbox
 void HandleCollision2(uint8_t bumpSensor){
@@ -69,27 +84,36 @@ void HandleCollision2(uint8_t bumpSensor){
    Clock_Delay1ms(1500);
 }
 
-void main_main(void) {
-  Clock_Init48MHz();
-  UART0_Init();
-//  LaunchPad_Init();
-  Motor_Init();     // your function
-  Bump_Init(&HandleCollision2);      // bump switches
-  EnableInterrupts();
+void main(void) {
+    mqtt_init();
 
-  char inData[SIZE];
+    // -------------------------------------------------
+        // Publish to Server Test
 
-  while(1) {
-      char action = UART0_InChar();
+        int rc;
+        rc = MQTTYield(&hMQTTClient, 10);
+        if (rc != 0) {
+            CLI_Write(" MQTT failed to yield \n\r");
+            LOOP_FOREVER();
+        }
 
-      if (action == 'f') {
-          Motor_Forward(3000,3000);
-      }
-      else if (action == 'b') {
-          Motor_Backward(3000,3000);
-      }
-      else if (action == 's') {
-          Motor_Forward(0,0);
-      }
-  }
+        MQTTMessage msg;
+        msg.dup = 0;
+        msg.id = 0;
+        msg.payload = "yeet";
+        msg.payloadlen = 5;
+        msg.qos = QOS0;
+        msg.retained = 0;
+        rc = MQTTPublish(&hMQTTClient, "daredevil_start_time", &msg);
+
+        if (rc != 0) {
+            CLI_Write(" Failed to publish unique ID to MQTT broker \n\r");
+            LOOP_FOREVER();
+        }
+        CLI_Write(" Published Data to Server 2! \n\r");
+
+        CLI_Write(" DONE \n\r");
+
+        while(1) {}
+
 }

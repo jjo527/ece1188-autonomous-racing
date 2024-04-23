@@ -47,6 +47,7 @@
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/MQTT/simplelink/include"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/MQTT/spi_cc3100"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/MQTT/mqtt"/>
+									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/MQTT/"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/MQTT/uart_cc3100"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/MQTT/board"/>
 									<listOptionValue builtIn="false" value="${PROJECT_ROOT}/MQTT/cli_uart"/>

@@ -374,7 +374,7 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
 /*
  * Application's entry point
  */
-int main(int argc, char** argv)
+void mqtt_init()
 {
     _i32 retVal = -1;
 
@@ -530,35 +530,63 @@ int main(int argc, char** argv)
     }
     CLI_Write(" Subscribed to uniqueID topic \n\r");
 
-    while(1){
-        rc = MQTTYield(&hMQTTClient, 10);
-        if (rc != 0) {
-            CLI_Write(" MQTT failed to yield \n\r");
-            LOOP_FOREVER();
-        }
 
-        if (publishID) {
-            int rc = 0;
-            MQTTMessage msg;
-            msg.dup = 0;
-            msg.id = 0;
-            msg.payload = uniqueID;
-            msg.payloadlen = 8;
-            msg.qos = QOS0;
-            msg.retained = 0;
-            rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
+    // -------------------------------------------------
+    // Publish to Server Test
 
-            if (rc != 0) {
-                CLI_Write(" Failed to publish unique ID to MQTT broker \n\r");
-                LOOP_FOREVER();
-            }
-            CLI_Write(" Published unique ID successfully \n\r");
-
-            publishID = 0;
-        }
-
-        Delay(10);
+    rc = MQTTYield(&hMQTTClient, 10);
+    if (rc != 0) {
+        CLI_Write(" MQTT failed to yield \n\r");
+        LOOP_FOREVER();
     }
+
+    MQTTMessage msg;
+    msg.dup = 0;
+    msg.id = 0;
+    msg.payload = "yeet";
+    msg.payloadlen = 5;
+    msg.qos = QOS0;
+    msg.retained = 0;
+    rc = MQTTPublish(&hMQTTClient, "daredevil_start_time", &msg);
+
+    if (rc != 0) {
+        CLI_Write(" Failed to publish unique ID to MQTT broker \n\r");
+        LOOP_FOREVER();
+    }
+    CLI_Write(" Published Data to Server! \n\r");
+
+
+    // -------------------------------------------------
+
+//    while(1){
+//        rc = MQTTYield(&hMQTTClient, 10);
+//        if (rc != 0) {
+//            CLI_Write(" MQTT failed to yield \n\r");
+//            LOOP_FOREVER();
+//        }
+//
+//        if (publishID) {
+//            int rc = 0;
+//            MQTTMessage msg;
+//            msg.dup = 0;
+//            msg.id = 0;
+//            msg.payload = uniqueID;
+//            msg.payloadlen = 8;
+//            msg.qos = QOS0;
+//            msg.retained = 0;
+//            rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
+//
+//            if (rc != 0) {
+//                CLI_Write(" Failed to publish unique ID to MQTT broker \n\r");
+//                LOOP_FOREVER();
+//            }
+//            CLI_Write(" Published unique ID successfully \n\r");
+//
+//            publishID = 0;
+//        }
+//
+//        Delay(10);
+//    }
 }
 
 static void generateUniqueID() {
