@@ -69,7 +69,7 @@ void HandleCollision2(uint8_t bumpSensor){
    Clock_Delay1ms(1500);
 }
 
-void main(void) {
+void main_main(void) {
   Clock_Init48MHz();
   UART0_Init();
 //  LaunchPad_Init();

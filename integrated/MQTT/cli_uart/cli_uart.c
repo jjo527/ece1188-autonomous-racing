@@ -42,6 +42,8 @@
 //
 //*****************************************************************************
 
+#define _USE_CLI_ 1
+
 #include "cli_uart.h"
 #include <string.h>
 #include <msp432.h>

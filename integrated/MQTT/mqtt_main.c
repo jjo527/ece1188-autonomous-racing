@@ -374,7 +374,7 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
 /*
  * Application's entry point
  */
-int main_mqtt(int argc, char** argv)
+int main(int argc, char** argv)
 {
     _i32 retVal = -1;
 
