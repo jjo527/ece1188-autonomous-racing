@@ -1,8 +1,8 @@
-# ECE 1188 - Line Following Race
+# ECE 1188 - Line Autonomous Racing
 
-## Team Olimar Members
+## Team Daredevil Members
 * Adam Brower
-* Jonah Belback
+* Troy Weaver
 * JJ Oswald
 
 ## Folder Structure
