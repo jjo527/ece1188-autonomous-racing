@@ -574,19 +574,19 @@ int Program21_1(void){ //Program21_1(void){ // example program 21.1, RSLK1.1
 int32_t Mode=1; // 0 stop, 1 run
 int32_t prevError = 0;
 int32_t Error;
-float Ki=0.05;  // integral controller gain
+float Ki=0.001;  // integral controller gain
 float Kp=10;  // proportional controller gain //was 4
-float Kd=0.005;  // derivative controller gain
+float Kd=0.1;  // derivative controller gain
 int32_t UR, UL;  // PWM duty 0 to 14,998
 
-#define TOOCLOSE 200 //was 200
-#define DESIRED 300 //was 250
-int32_t SetPoint = 250; // mm //was 250
+#define TOOCLOSE 120 //was 200
+#define DESIRED 500 //was 250+
+int32_t SetPoint = 0; // mm //was 250
 int32_t LeftDistance,CenterDistance,RightDistance; // mm
 #define TOOFAR 400 // was 400
 
-#define PWMNOMINAL 5000 // was 2500
-#define SWING 2000 //was 1000
+#define PWMNOMINAL 3500 // was 2500
+#define SWING 1500 //was 1000
 #define PWMMIN (PWMNOMINAL-SWING)
 #define PWMMAX (PWMNOMINAL+SWING)
 
@@ -605,6 +605,13 @@ void Controller(void) { // runs at 100 Hz
         Error = LeftDistance - RightDistance;
 
 
+
+       /* while(RightDistance<TOOCLOSE){
+                    UR = PWMNOMINAL;
+                    UL = 0;
+                }*/
+
+
         // Proportional term
         int32_t proportional = Kp * Error;
 
@@ -618,6 +625,7 @@ void Controller(void) { // runs at 100 Hz
 
         // Calculate PID output
         int32_t output = proportional + integralTerm + derivative;
+
 
         // Update PWM signals for both motors
         UR = PWMNOMINAL + output;
@@ -635,7 +643,32 @@ void Controller(void) { // runs at 100 Hz
             UL = PWMNOMINAL + SWING;
         }
 
+        if(LeftDistance < 200){
+            UR = 0;
+            UL =PWMNOMINAL;
+        }
+
+        if(RightDistance < 200){
+            UR = PWMNOMINAL;
+            UL = 0;
+        }
+
+        if(CenterDistance < 200){
+            UR = 0;
+            UL =PWMNOMINAL;
+        }
+
+
+        Motor_Forward(UL, UR);
+
         // Drive motors forward with adjusted PWM signals
+//         // UNCOMMENT FOR PID DEBUG
+//         char motorValues[50];
+//         char distances[100];
+//         snprintf(motorValues, 50, " Left Motor: %d , Right Motor: %d\n", UL, UR);
+//         snprintf(distances, 100, " Left Distance: %d , Right Distance: %d , Center Distance: %d\n"  , LeftDistance, RightDistance, CenterDistance);
+//         UART0_OutString(motorValues);
+//         UART0_OutString(distances);
         char motorValues[100];
         Tachometer_Get(&LeftTach[0], &LeftDir, &LeftSteps, &RightTach[0], &RightDir, &RightSteps);
 //        Tachometer_Get(&LeftTach[1], &LeftDir, &LeftSteps, &RightTach[1], &RightDir, &RightSteps);
