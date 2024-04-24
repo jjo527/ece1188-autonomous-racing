@@ -17,11 +17,8 @@
 
 #include "MQTTCC3100.h"
 
-unsigned long MilliTimer;
-
-void SysTick_Handler(void) {
-	MilliTimer++;
-}
+extern unsigned long MilliTimer;
+extern void SysTick_Handler(void);
 
 char expired(Timer* timer) {
 	long left = timer->end_time - MilliTimer;

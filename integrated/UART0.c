@@ -45,7 +45,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 
 #include <stdint.h>
 #include <stdio.h>
-#include "..\inc\UART0.h"
+#include "../inc/UART0.h"
 #include "msp.h"
 
 //------------UART0_Init------------
@@ -75,7 +75,7 @@ void UART0_Init(void){
                                  // N = clock/baud rate = 12,000,000/9600 = 1250
 
 
-  EUSCI_A0->BRW = 104;           // UCBR = baud rate = int(N) = 104
+  EUSCI_A0->BRW = 1250;           // UCBR = baud rate = int(N) = 104
 
   EUSCI_A0->MCTLW &= ~0xFFF1;    // clear first and second modulation stage bit fields
   P1->SEL0 |= 0x0C;
@@ -89,8 +89,9 @@ void UART0_Init(void){
 // Input: none
 // Output: ASCII code for key typed
 char UART0_InChar(void){
-  while((EUSCI_A0->IFG&0x01) == 0);
-  return((char)(EUSCI_A0->RXBUF));
+//  while((EUSCI_A0->IFG&0x01) == 0);
+//  return((char)(EUSCI_A0->RXBUF));
+    return ((EUSCI_A0->IFG&0x01) == 0) ? '0' : ((char)(EUSCI_A0->RXBUF));
 }
 
 //------------UART0_OutChar------------

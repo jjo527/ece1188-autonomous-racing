@@ -59,6 +59,8 @@ policies, either expressed or implied, of the FreeBSD Project.
 
 #include <stdint.h>
 #include <stdio.h>
+
+#include <string.h>
 #include "msp.h"
 #include "../inc/Clock.h"
 #include "../inc/CortexM.h"
@@ -139,11 +141,45 @@ uint16_t distanceSensorBufIndex = 0;
 
 uint8_t stop = 0;
 
+uint64_t g_count = 0;
+int g_delay_systick = 1;
+uint8_t g_LineResult;
+char command;
+char newCommand;
+
+unsigned long MilliTimer;
+
+void SysTick_Handler(void) {
+    MilliTimer++;
+
+//    if (g_count % 10 == 0) {
+//        Reflectance_Start();
+//        g_count +=1;
+//    }else if (g_count % (10 + g_delay_systick) == 0) {
+//        g_LineResult = Reflectance_End();
+//        g_count = 0;
+//    }else{
+//        g_count += 1;
+//    }
+
+    newCommand = UART0_InChar();
+
+    if(newCommand == 'g'){
+        command = newCommand;
+    }else if(newCommand == 's'){
+        command = newCommand;
+    }
+
+}
+
+// --------------------------------------
+
 
 // Select one of the following three output possibilities
 // define USENOKIA
 #define USEOLED 1
 #define USEUART 1
+
 
 #ifdef USENOKIA
 // this batch configures for LCD
@@ -618,6 +654,7 @@ void Controller(void) { // runs at 100 Hz
         // TODO: reenable debug
 //        snprintf(motorValues, 100, " Left PWM: %d , Right PWM: %d, Left Actual: %d, Right Actual: %d\n\r", UL, UR, ActualL, ActualR);
 //        UART0_OutString(motorValues);
+
         Motor_Forward(UL, UR);
 
     }
@@ -689,6 +726,8 @@ void main(void){ // wallFollow wall following implementation
 
 
   Motor_Init();
+  SysTick_Init(4800,2);
+
   Clear();
   OutString("OPT3101");
   SetCursor(0, 1);
@@ -705,7 +744,6 @@ void main(void){ // wallFollow wall following implementation
   OutString("Er=");
   SetCursor(0, 7);
   OutString("U =");
-
 
   OPT3101_Init();
   OPT3101_Setup();

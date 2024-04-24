@@ -40,6 +40,7 @@
 //
 #include <stdint.h>
 #include <stdio.h>
+
 //#include "msp.h"
 //#include "../inc/Clock.h"
 //#include "../inc/CortexM.h"
@@ -121,6 +122,7 @@ uint16_t avg(uint16_t *array, int length)
 //  printf("\n\rLab 17 speed controller\n\r");
 //  printf("t,DesiredL, DesiredR, ActualL, ActualR, Error_L, Error_R\n");
 //
+
 ////  LaunchPad_Init();
 //  Bump_Init();
 //  Tachometer_Init();
