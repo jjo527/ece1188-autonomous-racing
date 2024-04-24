@@ -759,76 +759,97 @@ void main(void){ // wallFollow wall following implementation
   EnableInterrupts();
   while(1){
 
-    if(TxChannel <= 2){ // 0,1,2 means new data
-      if(TxChannel==0){
-        if(Amplitudes[0] > 1000){
-          LeftDistance = FilteredDistances[0] = Left(LPF_Calc(Distances[0]));
-        }else{
-          LeftDistance = FilteredDistances[0] = 500;
-        }
-      }else if(TxChannel==1){
-        if(Amplitudes[1] > 1000){
-          CenterDistance = FilteredDistances[1] = LPF_Calc2(Distances[1]);
-        }else{
-          CenterDistance = FilteredDistances[1] = 500;
-        }
-      }else {
-        if(Amplitudes[2] > 1000){
-          RightDistance = FilteredDistances[2] = Right(LPF_Calc3(Distances[2]));
-        }else{
-          RightDistance = FilteredDistances[2] = 500;
-        }
-      }
+      if(command == 'g'){
 
-//      SetCursor(2, TxChannel+1);
-//      OutUDec(FilteredDistances[TxChannel]); OutChar(','); OutUDec(Amplitudes[TxChannel]);
-      TxChannel = 3; // 3 means no data
-      channel = (channel+1)%3;
-      OPT3101_StartMeasurementChannel(channel);
-      i = i + 1;
-    }
-    Controller();
+        if(Reflectance_Read(1000) == 0x00){
+
+              Motor_Forward(0,0);
 
 
-    uint32_t thing = 2000;
-      loopCount++;
-      if (loopCount % thing == 0) {
-          char outStr[30];
-          snprintf(outStr, 30, "count = %d\r\n", distanceSensorBufIndex);
-          UART0_OutString(outStr);
+            Motor_Forward(5000, 5000);
+            Clock_Delay1ms(10);
 
-          const uint16_t maxVal = 2500;
-          distanceSensorBuf[0][distanceSensorBufIndex] = (LeftDistance < maxVal)   ? LeftDistance : maxVal;
-          distanceSensorBuf[1][distanceSensorBufIndex] = (CenterDistance < maxVal) ? CenterDistance : maxVal;
-          distanceSensorBuf[2][distanceSensorBufIndex] = (RightDistance < maxVal)  ? RightDistance : maxVal;
 
-          if (distanceSensorBufIndex < 199) {
-              distanceSensorBufIndex++;
+              while(1){
+                  if(Reflectance_Read(1000) != 0x00){
+                      Motor_Forward(0,0);
+                  }
+              }
           }
+
+        if(TxChannel <= 2){ // 0,1,2 means new data
+          if(TxChannel==0){
+            if(Amplitudes[0] > 1000){
+              LeftDistance = FilteredDistances[0] = Left(LPF_Calc(Distances[0]));
+            }else{
+              LeftDistance = FilteredDistances[0] = 500;
+            }
+          }else if(TxChannel==1){
+            if(Amplitudes[1] > 1000){
+              CenterDistance = FilteredDistances[1] = LPF_Calc2(Distances[1]);
+            }else{
+              CenterDistance = FilteredDistances[1] = 500;
+            }
+          }else {
+            if(Amplitudes[2] > 1000){
+              RightDistance = FilteredDistances[2] = Right(LPF_Calc3(Distances[2]));
+            }else{
+              RightDistance = FilteredDistances[2] = 500;
+            }
+          }
+
+    //      SetCursor(2, TxChannel+1);
+    //      OutUDec(FilteredDistances[TxChannel]); OutChar(','); OutUDec(Amplitudes[TxChannel]);
+          TxChannel = 3; // 3 means no data
+          channel = (channel+1)%3;
+          OPT3101_StartMeasurementChannel(channel);
+          i = i + 1;
+        }
+        Controller();
+
+
+        uint32_t thing = 2000;
+          loopCount++;
+          if (loopCount % thing == 0) {
+              char outStr[30];
+              snprintf(outStr, 30, "count = %d\r\n", distanceSensorBufIndex);
+              UART0_OutString(outStr);
+
+              const uint16_t maxVal = 2500;
+              distanceSensorBuf[0][distanceSensorBufIndex] = (LeftDistance < maxVal)   ? LeftDistance : maxVal;
+              distanceSensorBuf[1][distanceSensorBufIndex] = (CenterDistance < maxVal) ? CenterDistance : maxVal;
+              distanceSensorBuf[2][distanceSensorBufIndex] = (RightDistance < maxVal)  ? RightDistance : maxVal;
+
+              if (distanceSensorBufIndex < 199) {
+                  distanceSensorBufIndex++;
+              }
+          }
+
+
+        if(i >= 100){
+          i = 0;
+    //      SetCursor(3, 5);
+    //      OutUDec(SetPoint);
+    //      SetCursor(3, 6);
+    //      OutSDec(Error);
+    //      SetCursor(3, 7);
+    //      OutUDec(UL); OutChar(','); OutUDec(UR);
+        }
+
+        if (stop) {
+            Motor_Forward(0,0);
+            UART0_OutString("Sending Stop Data\r\n");
+            message(1);
+            stop = 0;
+            collisionGuard = 0;
+
+            while(1) {}
+        }
+
+        WaitForInterrupt();
+      }else if(command == 's'){
+          Motor_Forward(0,0);
       }
-
-
-    if(i >= 100){
-      i = 0;
-//      SetCursor(3, 5);
-//      OutUDec(SetPoint);
-//      SetCursor(3, 6);
-//      OutSDec(Error);
-//      SetCursor(3, 7);
-//      OutUDec(UL); OutChar(','); OutUDec(UR);
-    }
-
-    if (stop) {
-        Motor_Forward(0,0);
-        UART0_OutString("Sending Stop Data\r\n");
-        message(1);
-        stop = 0;
-        collisionGuard = 0;
-
-        while(1) {}
-    }
-
-    WaitForInterrupt();
   }
 }
 
