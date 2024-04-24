@@ -166,8 +166,10 @@ void SysTick_Handler(void) {
 
     if(newCommand == 'g'){
         command = newCommand;
+        stop = 0;
     }else if(newCommand == 's'){
         command = newCommand;
+        stop = 1;
     }
 
 }
@@ -703,28 +705,17 @@ void main(void){ // wallFollow wall following implementation
   }
 
   Init();
-
   OutString("Test!\n\r");
   Tachometer_Init();
   mqtt_init();
-
-
-
-  UART0_OutString(" before\n\r");
   UART0_OutString(" after\n\r");
-
-
 
   // ---------------------------------
 
-//  LaunchPad_Init(); // built-in switches and LEDs
   Motor_Stop(); // initialize and stop
   Mode = 1;
 
-
   I2CB1_Init(30); // baud rate = 12MHz/30=400kHz
-
-
   Motor_Init();
   SysTick_Init(4800,2);
 
@@ -755,22 +746,17 @@ void main(void){ // wallFollow wall following implementation
   LPF_Init2(100,8);
   LPF_Init3(100,8);
   UR = UL = PWMNOMINAL; //initial power
-//  Pause();
   EnableInterrupts();
   while(1){
-
       if(command == 'g'){
 
         if(Reflectance_Read(1000) == 0x00){
 
-              Motor_Forward(0,0);
-
-
             Motor_Forward(5000, 5000);
             Clock_Delay1ms(10);
 
-
-              while(1){
+              while(!stop){
+                  UART0_OutString("Finished Race!\n\r");
                   if(Reflectance_Read(1000) != 0x00){
                       Motor_Forward(0,0);
                   }
@@ -784,7 +770,6 @@ void main(void){ // wallFollow wall following implementation
             }else{
               LeftDistance = FilteredDistances[0] = 500;
             }
-          }else if(TxChannel==1){
             if(Amplitudes[1] > 1000){
               CenterDistance = FilteredDistances[1] = LPF_Calc2(Distances[1]);
             }else{
@@ -836,20 +821,21 @@ void main(void){ // wallFollow wall following implementation
     //      OutUDec(UL); OutChar(','); OutUDec(UR);
         }
 
-        if (stop) {
-            Motor_Forward(0,0);
-            UART0_OutString("Sending Stop Data\r\n");
-            message(1);
-            stop = 0;
-            collisionGuard = 0;
-
-            while(1) {}
-        }
-
         WaitForInterrupt();
       }else if(command == 's'){
           Motor_Forward(0,0);
+          stop = 1;
       }
+
+      if (stop) {
+         Motor_Forward(0,0);
+         UART0_OutString("Sending Stop Data\r\n");
+         message(1);
+         stop = 0;
+         collisionGuard = 0;
+
+         while(stop) {}
+     }
   }
 }
 
@@ -859,11 +845,8 @@ void collision(uint8_t bump){
         numCrashes++;
     }
 
-    collisionGuard = 1;
-
 
     Motor_Forward(0,0); //STOP IF BUMP IS DETECTED
-    stop = 1;
 
    UART0_OutString(" DONE \n\r");
 }
