@@ -453,18 +453,18 @@ int32_t Mode=1; // 0 stop, 1 run
 int32_t prevError = 0;
 int32_t Error;
 float Ki=0.001;  // integral controller gain
-float Kp=3.5;  // proportional controller gain //was 4
+float Kp=10;  // proportional controller gain //was 4
 float Kd=0.1;  // derivative controller gain
 int32_t UR, UL;  // PWM duty 0 to 14,998
 
 #define TOOCLOSE 120 //was 200
-#define DESIRED 200 //was 250+
+#define DESIRED 500 //was 250+
 int32_t SetPoint = 0; // mm //was 250
 int32_t LeftDistance,CenterDistance,RightDistance; // mm
 #define TOOFAR 400 // was 400
 
-#define PWMNOMINAL 3300 // was 2500
-#define SWING 2000 //was 1000
+#define PWMNOMINAL 3500 // was 2500
+#define SWING 1500 //was 1000
 #define PWMMIN (PWMNOMINAL-SWING)
 #define PWMMAX (PWMNOMINAL+SWING)
 
@@ -482,12 +482,7 @@ void Controller(void) { // runs at 100 Hz
         // Calculate error based on the difference between SetPoint and actual distance readings
         Error = LeftDistance - RightDistance;
 
-        if(LeftDistance<TOOCLOSE){
-            UR = 0;
-            UL = 0;
-            Motor_Forward(UL, UR);
-            Clock_Delay1ms(500);
-        }
+
 
        /* while(RightDistance<TOOCLOSE){
                     UR = PWMNOMINAL;
@@ -526,6 +521,24 @@ void Controller(void) { // runs at 100 Hz
             UL = PWMNOMINAL + SWING;
         }
 
+        if(LeftDistance < 200){
+            UR = 0;
+            UL =PWMNOMINAL;
+        }
+
+        if(RightDistance < 200){
+            UR = PWMNOMINAL;
+            UL = 0;
+        }
+
+        if(CenterDistance < 200){
+            UR = 0;
+            UL =PWMNOMINAL;
+        }
+
+
+        Motor_Forward(UL, UR);
+
         // Drive motors forward with adjusted PWM signals
         char motorValues[50];
         char distances[100];
@@ -533,7 +546,6 @@ void Controller(void) { // runs at 100 Hz
         snprintf(distances, 100, " Left Distance: %d , Right Distance: %d , Center Distance: %d\n"  , LeftDistance, RightDistance, CenterDistance);
         UART0_OutString(motorValues);
         UART0_OutString(distances);
-        Motor_Forward(UL, UR);
 
     }
 }
