@@ -26,7 +26,7 @@ int main_uartdbg(int argc, char** argv)
 
 static void displayBanner()
 {
-    CLI_Write("\n\r\n\r");
-    CLI_Write(" MQTT Twitter Controlled RGB LED - Version ");
-    CLI_Write("\n\r*******************************************************************************\n\r");
+    UART0_OutString("\n\r\n\r");
+    UART0_OutString(" MQTT Twitter Controlled RGB LED - Version ");
+    UART0_OutString("\n\r*******************************************************************************\n\r");
 }

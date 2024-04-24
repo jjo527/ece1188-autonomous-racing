@@ -38,8 +38,9 @@
 //policies, either expressed or implied, of the FreeBSD Project.
 //*/
 //
-//#include <stdint.h>
-//#include <stdio.h>
+#include <stdint.h>
+#include <stdio.h>
+
 //#include "msp.h"
 //#include "../inc/Clock.h"
 //#include "../inc/CortexM.h"
@@ -61,25 +62,25 @@
 //
 ////****************************************************************************
 //// incremental speed control from Lab 16
-//
-//// ------------avg------------
-//// Simple math function that returns the average
-//// value of an array.
-//// Input: array is an array of 16-bit unsigned numbers
-////        length is the number of elements in 'array'
-//// Output: the average value of the array
-//// Note: overflow is not considered
-//uint16_t avg(uint16_t *array, int length)
-//{
-//  int i;
-//  uint32_t sum = 0;
-//
-//  for(i=0; i<length; i=i+1)
-//  {
-//    sum = sum + array[i];
-//  }
-//  return (sum/length);
-//}
+
+// ------------avg------------
+// Simple math function that returns the average
+// value of an array.
+// Input: array is an array of 16-bit unsigned numbers
+//        length is the number of elements in 'array'
+// Output: the average value of the array
+// Note: overflow is not considered
+uint16_t avg(uint16_t *array, int length)
+{
+  int i;
+  uint32_t sum = 0;
+
+  for(i=0; i<length; i=i+1)
+  {
+    sum = sum + array[i];
+  }
+  return (sum/length);
+}
 //
 //uint16_t DesiredL = 65;                  // desired rotations per minute
 //uint16_t DesiredR = 85;                  // desired rotations per minute
@@ -109,57 +110,10 @@
 //int32_t UR, UL;  // PWM duty 0 to 14,998
 //
 //void update_rpm_values() {
-//    uint8_t read = Bump_Read();
-//    uint8_t readAnd = read&0x3F;
-//    int i = 0;
-//    Tachometer_Get(&LeftTach[0], &LeftDir, &LeftSteps, &RightTach[0], &RightDir, &RightSteps);
-//    Tachometer_Get(&LeftTach[1], &LeftDir, &LeftSteps, &RightTach[1], &RightDir, &RightSteps);
-//    Tachometer_Get(&LeftTach[2], &LeftDir, &LeftSteps, &RightTach[2], &RightDir, &RightSteps);
 //
-////         i = i + 1;
-//
-//         if(1)
-//         {
-//
-//           //This section of the code checks the wheel state every second (10*100ms)
-//           i = 0;
-//
-//           //Sense state of wheels (in RPM) and take the average of the last n values
-//           // (1/tach step/cycles) * (12,000,000 cycles/sec) * (60 sec/min) * (1/360 rotation/step)
-//           ActualL = 2000000/avg(LeftTach, TACHBUFF);
-//           ActualR = 2000000/avg(RightTach, TACHBUFF);
-//
-//           //Calculate Error signals
-//           Error_L = DesiredL - ActualL;
-//           Error_R = DesiredR - ActualR;
-//
-//            //PID Control Law
-//            //Initially, only the I-term is implemented, you must add the P and D terms.
-//            UL = (UL + (Ki*Error_L/1024) + (Kd*1024/Error_L) + Kp);  // adjust left motor
-//            UR = (UR + (Ki*Error_R/1024) + (Kd*1024/Error_R) + Kp);  // adjust right motor
-//
-//   //         UL = (UL + (Ki*Error_L/1024) + Kp);  // adjust left motor
-//   //         UR = (UL + (Ki*Error_R/1024) + Kp);  // adjust right motor
-//
-//           Motor_Forward(UL,UR);
-//
-//   //        printf("\nt = %d ms\n\r",t);
-//   //        printf("%5d Target RPM(Left)  %5d Target RPM(Right)\n\r",DesiredL,DesiredR);
-//   //        printf("%5d Actual RPM(Left)  %5d Actual RPM(Right)\n\r",ActualL,ActualR);
-//   //        printf("%5d Error  RPM(Left)  %5d Error  RPM(Right)\n\r",Error_L,Error_R);
-//
-//           printf("%d,%5d,%5d,%5d,%5d,%5d,%5d\n", t,DesiredL, DesiredR, ActualL, ActualR, Error_L, Error_R);
-//
-//
-//         }
-//         Clock_Delay1ms(100); // delay ~0.1 sec at 48 MHz
-//         t = t +100; // keep track of timer
-//
-//         read = Bump_Read();
-//         readAnd = read&0x3F;
 //}
 //
-//void main_(void)
+//void main(void)
 //{
 //  int i = 0;
 //  Clock_Init48MHz();// set system clock to 48 MHz
@@ -168,6 +122,7 @@
 //  printf("\n\rLab 17 speed controller\n\r");
 //  printf("t,DesiredL, DesiredR, ActualL, ActualR, Error_L, Error_R\n");
 //
+
 ////  LaunchPad_Init();
 //  Bump_Init();
 //  Tachometer_Init();

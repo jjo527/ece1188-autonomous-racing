@@ -3,7 +3,8 @@
 
 
 void mqtt_init();
-
+void message(uint8_t sel);
+void sendMessage();
 
 
 

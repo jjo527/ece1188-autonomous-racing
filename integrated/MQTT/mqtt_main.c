@@ -60,6 +60,10 @@
 #include "sl_common.h"
 #include "MQTTClient.h"
 
+#include "../inc/UART0.h"
+
+void messageArrived(MessageData* data);
+
 /*
  * Values for below macros shall be modified per the access-point's (AP) properties
  * SimpleLink device will connect to following AP when the application is executed
@@ -120,6 +124,306 @@ char uniqueID[9];       // Unique ID generated from TLV RAND NUM and MAC Address
 Network n;
 Client hMQTTClient;     // MQTT Client
 
+
+/* TimerA UpMode Configuration Parameter */
+const Timer_A_UpModeConfig upConfig =
+{
+        TIMER_A_CLOCKSOURCE_SMCLK,              // SMCLK Clock Source
+        TIMER_A_CLOCKSOURCE_DIVIDER_8,          // SMCLK/8 = 6MHz
+        90000,                                  // 15ms debounce period
+        TIMER_A_TAIE_INTERRUPT_DISABLE,         // Disable Timer interrupt
+        TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE ,    // Enable CCR0 interrupt
+        TIMER_A_DO_CLEAR                        // Clear value
+};
+
+// ----------------------------------------------------
+
+void messageInit() {
+
+}
+
+extern uint16_t leftSpeedMax;
+extern uint16_t rightSpeedMax;
+
+void sendMaxSpeeds() {
+    UART0_OutString(" in sendMaxSpeeds\n\r");
+    int rc;
+    rc = MQTTYield(&hMQTTClient, 10);
+    if (rc != 0) {
+        UART0_OutString(" MQTT failed to yield \n\r");
+        LOOP_FOREVER();
+    }
+
+    // ------------------------------
+    char leftSpeedMaxStr [10];
+    snprintf(leftSpeedMaxStr, 10, "%5d RPM", leftSpeedMax);
+
+    MQTTMessage msg;
+    msg.dup = 0;
+    msg.id = 0;
+    msg.payload = leftSpeedMaxStr;
+    msg.payloadlen = 10;
+    msg.qos = QOS0;
+    msg.retained = 0;
+    rc = MQTTPublish(&hMQTTClient, "daredevil_max_speed_L", &msg);
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString(" Sent Max Speeds to Server, L: %d\n\r");
+
+    // ------------------------------
+    char rightSpeedMaxStr [10];
+    snprintf(rightSpeedMaxStr, 10, "%5d RPM", rightSpeedMax);
+
+    MQTTMessage msg2;
+    msg2.dup = 0;
+    msg2.id = 0;
+    msg2.payload = rightSpeedMaxStr;
+    msg2.payloadlen = 10;
+    msg2.qos = QOS0;
+    msg2.retained = 0;
+    rc = MQTTPublish(&hMQTTClient, "daredevil_max_speed_R", &msg2);
+
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString(" Sent Max Speeds to Server, R: %d\n\r");
+}
+
+void sendStartSignal() {
+    UART0_OutString(" in sendStartSignal\n\r");
+    int rc;
+        rc = MQTTYield(&hMQTTClient, 10);
+        if (rc != 0) {
+            UART0_OutString(" MQTT failed to yield \n\r");
+            LOOP_FOREVER();
+        }
+
+        MQTTMessage msg;
+        msg.dup = 0;
+        msg.id = 0;
+        msg.payload = "yeet";
+        msg.payloadlen = 5;
+        msg.qos = QOS0;
+        msg.retained = 0;
+        rc = MQTTPublish(&hMQTTClient, "daredevil_start_time", &msg);
+
+        if (rc != 0) {
+            UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
+            LOOP_FOREVER();
+        }
+        UART0_OutString(" Published Data to Server! \n\r");
+}
+
+void sendResetSignal() {
+    UART0_OutString(" in sendResetSignal\n\r");
+    int rc;
+    rc = MQTTYield(&hMQTTClient, 10);
+    if (rc != 0) {
+        UART0_OutString(" MQTT failed to yield \n\r");
+        LOOP_FOREVER();
+    }
+
+    MQTTMessage msg;
+    msg.dup = 0;
+    msg.id = 0;
+    msg.payload = "yeet";
+    msg.payloadlen = 5;
+    msg.qos = QOS0;
+    msg.retained = 0;
+    rc = MQTTPublish(&hMQTTClient, "daredevil_reset", &msg);
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString("Sent the reset signal! \n\r");
+}
+
+void sendStopSignal() {
+    UART0_OutString(" in sendStopSignal\n\r");
+    int rc;
+    rc = MQTTYield(&hMQTTClient, 10);
+    if (rc != 0) {
+        UART0_OutString(" MQTT failed to yield \n\r");
+        LOOP_FOREVER();
+    }
+
+    MQTTMessage msg;
+    msg.dup = 0;
+    msg.id = 0;
+    msg.payload = "yeet";
+    msg.payloadlen = 5;
+    msg.qos = QOS0;
+    msg.retained = 0;
+    rc = MQTTPublish(&hMQTTClient, "daredevil_stop_time", &msg);
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString("Sent the stop signal! \n\r");
+
+}
+
+extern uint16_t numCrashes;
+
+void sendNumCrashesSignal() {
+    UART0_OutString(" in sendNumCrashesSignal()\n\r");
+    int rc;
+    rc = MQTTYield(&hMQTTClient, 10);
+    if (rc != 0) {
+        UART0_OutString(" MQTT failed to yield \n\r");
+        LOOP_FOREVER();
+    }
+
+    char numCrashesStr [5];
+    snprintf(numCrashesStr, 5, "%4d", numCrashes);
+
+    MQTTMessage msg;
+    msg.dup = 0;
+    msg.id = 0;
+    msg.payload = numCrashesStr;
+    msg.payloadlen = 5;
+    msg.qos = QOS0;
+    msg.retained = 0;
+    rc = MQTTPublish(&hMQTTClient, "daredevil_crashes", &msg);
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString("Sent the num crashes signal! \n\r");
+
+}
+
+extern int16_t distanceSensorBuf [3][200];
+
+void sendDistanceSignal() {
+    UART0_OutString(" in sendDistanceSignal()\n\r");
+    int rc;
+    rc = MQTTYield(&hMQTTClient, 10);
+    if (rc != 0) {
+        UART0_OutString(" MQTT failed to yield \n\r");
+        LOOP_FOREVER();
+    }
+
+
+    UART0_OutString("Start Sending Distance data\n\n\r");
+    uint32_t i;
+    for (i = 0; i < 200; i++) {
+        if (distanceSensorBuf[0][i] == -1) {
+            break;
+        }
+
+        char lineBuf [20];
+        uint8_t newline = 10;
+        snprintf(lineBuf, 20, "%d,%d,%d", distanceSensorBuf[0][i],distanceSensorBuf[1][i],distanceSensorBuf[2][i]);
+//        strcat(lineBuf, &newline);
+
+        UART0_OutString(lineBuf);
+
+        MQTTMessage msg;
+        msg.dup = 0;
+        msg.id = 0;
+        msg.payload = lineBuf;
+        msg.payloadlen = 20;
+        msg.qos = QOS0;
+        msg.retained = 0;
+//        rc = MQTTPublish(&hMQTTClient, "daredevil_crashes", &msg);
+         rc = MQTTPublish(&hMQTTClient, "daredevil_tach", &msg);
+
+        if (rc != 0) {
+            UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
+            LOOP_FOREVER();
+        }
+        char debugBuf [30];
+        snprintf(debugBuf, 30, "Sent distance csv line %d\n\r", i);
+        UART0_OutString(debugBuf);
+    }
+
+    UART0_OutString("Sent the distance sensor csv to Node Red! \n\r");
+}
+
+
+
+void message(uint8_t sel) {
+    UART0_OutString("message_init \n\r");
+    _i32 retVal = -1;
+
+    UART0_OutString("-------------------------------\n\r");
+    UART0_OutString("Connecting to Server 2\n\r");
+
+    int rc = 0;
+    unsigned char buf[100];
+    unsigned char readbuf[100];
+
+    NewNetwork(&n);
+    rc = ConnectNetwork(&n, MQTT_BROKER_SERVER, 1883);
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to connect to MQTT broker \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString(" Connected to MQTT broker \n\r");
+
+    MQTTClient(&hMQTTClient, &n, 1000, buf, 100, readbuf, 100);
+    MQTTPacket_connectData cdata = MQTTPacket_connectData_initializer;
+    cdata.MQTTVersion = 3;
+    cdata.clientID.cstring = uniqueID;
+    rc = MQTTConnect(&hMQTTClient, &cdata);
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to start MQTT client \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString(" Started MQTT client successfully \n\r");
+
+    rc = MQTTSubscribe(&hMQTTClient, SUBSCRIBE_TOPIC, QOS0, messageArrived);
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to subscribe to /msp/cc3100/demo topic \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString(" Subscribed to /msp/cc3100/demo topic \n\r");
+
+    rc = MQTTSubscribe(&hMQTTClient, uniqueID, QOS0, messageArrived);
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to subscribe to uniqueID topic \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString(" Subscribed to uniqueID topic \n\r");
+
+
+    // -------------------------------------------------
+    // Publish to Server Test
+
+    switch (sel) {
+        case 0:
+            sendStartSignal();
+            break;
+        case 1:
+            sendMaxSpeeds();
+            sendStopSignal();
+            sendNumCrashesSignal();
+            sendDistanceSignal();
+            break;
+        case 2:
+            break;
+        default:
+            sendStartSignal();
+            break;
+
+    }
+}
+
+// ----------------------------------------------------
+
 _u32  g_Status = 0;
 struct{
     _u8 Recvbuff[MAX_SEND_RCV_SIZE];
@@ -137,17 +441,6 @@ const uint8_t port_mapping[] =
 {
     //Port P2:
     PM_TA0CCR1A, PM_TA0CCR2A, PM_TA0CCR3A, PM_NONE, PM_TA1CCR1A, PM_NONE, PM_NONE, PM_NONE
-};
-
-/* TimerA UpMode Configuration Parameter */
-const Timer_A_UpModeConfig upConfig =
-{
-        TIMER_A_CLOCKSOURCE_SMCLK,              // SMCLK Clock Source
-        TIMER_A_CLOCKSOURCE_DIVIDER_8,          // SMCLK/8 = 6MHz
-        90000,                                  // 15ms debounce period
-        TIMER_A_TAIE_INTERRUPT_DISABLE,         // Disable Timer interrupt
-        TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE ,    // Enable CCR0 interrupt
-        TIMER_A_DO_CLEAR                        // Clear value
 };
 
 /*
@@ -189,8 +482,8 @@ static void generateUniqueID();
 void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
 {
     if(pWlanEvent == NULL)
-        CLI_Write(" [WLAN EVENT] NULL Pointer Error \n\r");
-    
+        UART0_OutString(" [WLAN EVENT] NULL Pointer Error \n\r");
+
     switch(pWlanEvent->Event)
     {
         case SL_WLAN_CONNECT_EVENT:
@@ -221,18 +514,18 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
             /* If the user has initiated 'Disconnect' request, 'reason_code' is SL_USER_INITIATED_DISCONNECTION */
             if(SL_USER_INITIATED_DISCONNECTION == pEventData->reason_code)
             {
-                CLI_Write(" Device disconnected from the AP on application's request \n\r");
+                UART0_OutString(" Device disconnected from the AP on application's request \n\r");
             }
             else
             {
-                CLI_Write(" Device disconnected from the AP on an ERROR..!! \n\r");
+                UART0_OutString(" Device disconnected from the AP on an ERROR..!! \n\r");
             }
         }
         break;
 
         default:
         {
-            CLI_Write(" [WLAN EVENT] Unexpected event \n\r");
+            UART0_OutString(" [WLAN EVENT] Unexpected event \n\r");
         }
         break;
     }
@@ -253,8 +546,8 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
 void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent)
 {
     if(pNetAppEvent == NULL)
-        CLI_Write(" [NETAPP EVENT] NULL Pointer Error \n\r");
- 
+        UART0_OutString(" [NETAPP EVENT] NULL Pointer Error \n\r");
+
     switch(pNetAppEvent->Event)
     {
         case SL_NETAPP_IPV4_IPACQUIRED_EVENT:
@@ -276,7 +569,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent)
 
         default:
         {
-            CLI_Write(" [NETAPP EVENT] Unexpected event \n\r");
+            UART0_OutString(" [NETAPP EVENT] Unexpected event \n\r");
         }
         break;
     }
@@ -302,7 +595,7 @@ void SimpleLinkHttpServerCallback(SlHttpServerEvent_t *pHttpEvent,
      * This application doesn't work with HTTP server - Hence these
      * events are not handled here
      */
-    CLI_Write(" [HTTP EVENT] Unexpected event \n\r");
+    UART0_OutString(" [HTTP EVENT] Unexpected event \n\r");
 }
 
 /*!
@@ -318,7 +611,7 @@ void SimpleLinkGeneralEventHandler(SlDeviceEvent_t *pDevEvent)
      * Most of the general errors are not FATAL are are to be handled
      * appropriately by the application
      */
-    CLI_Write(" [GENERAL EVENT] \n\r");
+    UART0_OutString(" [GENERAL EVENT] \n\r");
 }
 
 /*!
@@ -331,7 +624,7 @@ void SimpleLinkGeneralEventHandler(SlDeviceEvent_t *pDevEvent)
 void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
 {
     if(pSock == NULL)
-        CLI_Write(" [SOCK EVENT] NULL Pointer Error \n\r");
+        UART0_OutString(" [SOCK EVENT] NULL Pointer Error \n\r");
 
     switch( pSock->Event )
     {
@@ -350,19 +643,19 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
             switch( pSock->EventData.status )
             {
                 case SL_ECLOSE:
-                    CLI_Write(" [SOCK EVENT] Close socket operation failed to transmit all queued packets\n\r");
+                    UART0_OutString(" [SOCK EVENT] Close socket operation failed to transmit all queued packets\n\r");
                 break;
 
 
                 default:
-                    CLI_Write(" [SOCK EVENT] Unexpected event \n\r");
+                    UART0_OutString(" [SOCK EVENT] Unexpected event \n\r");
                 break;
             }
         }
         break;
 
         default:
-            CLI_Write(" [SOCK EVENT] Unexpected event \n\r");
+            UART0_OutString(" [SOCK EVENT] Unexpected event \n\r");
         break;
     }
 }
@@ -376,6 +669,7 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock)
  */
 void mqtt_init()
 {
+    UART0_OutString("mqtt_init \n\r");
     _i32 retVal = -1;
 
     retVal = initializeAppVariables();
@@ -383,10 +677,10 @@ void mqtt_init()
 
     /* Stop WDT and initialize the system-clock of the MCU */
     stopWDT();
-    initClk();
+//    initClk();
 
     // TODO:add motor files
-    Motor_Init();
+//    Motor_Init();
 
     // TODO: comment out if it doesn't work
     //--------------------------------------------
@@ -429,7 +723,7 @@ void mqtt_init()
     Interrupt_enableMaster();
 
     /* Configure command line interface */
-    CLI_Configure();
+    // CLI_Configure();
 
     displayBanner();
 
@@ -448,12 +742,12 @@ void mqtt_init()
     if(retVal < 0)
     {
         if (DEVICE_NOT_IN_STATION_MODE == retVal)
-            CLI_Write(" Failed to configure the device in its default state \n\r");
+            UART0_OutString(" Failed to configure the device in its default state \n\r");
 
         LOOP_FOREVER();
     }
 
-    CLI_Write(" Device is configured in default state \n\r");
+    UART0_OutString(" Device is configured in default state \n\r");
 
     /*
      * Assumption is that the device is configured in station mode already
@@ -463,21 +757,21 @@ void mqtt_init()
     if ((retVal < 0) ||
         (ROLE_STA != retVal) )
     {
-        CLI_Write(" Failed to start the device \n\r");
+        UART0_OutString(" Failed to start the device \n\r");
         LOOP_FOREVER();
     }
 
-    CLI_Write(" Device started as STATION \n\r");
+    UART0_OutString(" Device started as STATION \n\r");
 
     /* Connecting to WLAN AP */
     retVal = establishConnectionWithAP();
     if(retVal < 0)
     {
-        CLI_Write(" Failed to establish connection w/ an AP \n\r");
+        UART0_OutString(" Failed to establish connection w/ an AP \n\r");
         LOOP_FOREVER();
     }
 
-    CLI_Write(" Connection established w/ AP and IP is acquired \n\r");
+    UART0_OutString(" Connection established w/ AP and IP is acquired \n\r");
 
     // Obtain MAC Address
     sl_NetCfgGet(SL_MAC_ADDRESS_GET,NULL,&macAddressLen,(unsigned char *)macAddressVal);
@@ -497,10 +791,10 @@ void mqtt_init()
     rc = ConnectNetwork(&n, MQTT_BROKER_SERVER, 1883);
 
     if (rc != 0) {
-        CLI_Write(" Failed to connect to MQTT broker \n\r");
+        UART0_OutString(" Failed to connect to MQTT broker \n\r");
         LOOP_FOREVER();
     }
-    CLI_Write(" Connected to MQTT broker \n\r");
+    UART0_OutString(" Connected to MQTT broker \n\r");
 
     MQTTClient(&hMQTTClient, &n, 1000, buf, 100, readbuf, 100);
     MQTTPacket_connectData cdata = MQTTPacket_connectData_initializer;
@@ -509,51 +803,33 @@ void mqtt_init()
     rc = MQTTConnect(&hMQTTClient, &cdata);
 
     if (rc != 0) {
-        CLI_Write(" Failed to start MQTT client \n\r");
+        UART0_OutString(" Failed to start MQTT client \n\r");
         LOOP_FOREVER();
     }
-    CLI_Write(" Started MQTT client successfully \n\r");
+    UART0_OutString(" Started MQTT client successfully \n\r");
 
     rc = MQTTSubscribe(&hMQTTClient, SUBSCRIBE_TOPIC, QOS0, messageArrived);
 
     if (rc != 0) {
-        CLI_Write(" Failed to subscribe to /msp/cc3100/demo topic \n\r");
+        UART0_OutString(" Failed to subscribe to /msp/cc3100/demo topic \n\r");
         LOOP_FOREVER();
     }
-    CLI_Write(" Subscribed to /msp/cc3100/demo topic \n\r");
+    UART0_OutString(" Subscribed to /msp/cc3100/demo topic \n\r");
 
     rc = MQTTSubscribe(&hMQTTClient, uniqueID, QOS0, messageArrived);
 
     if (rc != 0) {
-        CLI_Write(" Failed to subscribe to uniqueID topic \n\r");
+        UART0_OutString(" Failed to subscribe to uniqueID topic \n\r");
         LOOP_FOREVER();
     }
-    CLI_Write(" Subscribed to uniqueID topic \n\r");
+    UART0_OutString(" Subscribed to uniqueID topic \n\r");
 
 
     // -------------------------------------------------
     // Publish to Server Test
 
-    rc = MQTTYield(&hMQTTClient, 10);
-    if (rc != 0) {
-        CLI_Write(" MQTT failed to yield \n\r");
-        LOOP_FOREVER();
-    }
-
-    MQTTMessage msg;
-    msg.dup = 0;
-    msg.id = 0;
-    msg.payload = "yeet";
-    msg.payloadlen = 5;
-    msg.qos = QOS0;
-    msg.retained = 0;
-    rc = MQTTPublish(&hMQTTClient, "daredevil_start_time", &msg);
-
-    if (rc != 0) {
-        CLI_Write(" Failed to publish unique ID to MQTT broker \n\r");
-        LOOP_FOREVER();
-    }
-    CLI_Write(" Published Data to Server! \n\r");
+    sendResetSignal();
+    sendStartSignal();
 
 
     // -------------------------------------------------
@@ -561,7 +837,7 @@ void mqtt_init()
 //    while(1){
 //        rc = MQTTYield(&hMQTTClient, 10);
 //        if (rc != 0) {
-//            CLI_Write(" MQTT failed to yield \n\r");
+//            UART0_OutString(" MQTT failed to yield \n\r");
 //            LOOP_FOREVER();
 //        }
 //
@@ -577,10 +853,10 @@ void mqtt_init()
 //            rc = MQTTPublish(&hMQTTClient, PUBLISH_TOPIC, &msg);
 //
 //            if (rc != 0) {
-//                CLI_Write(" Failed to publish unique ID to MQTT broker \n\r");
+//                UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
 //                LOOP_FOREVER();
 //            }
-//            CLI_Write(" Published unique ID successfully \n\r");
+//            UART0_OutString(" Published unique ID successfully \n\r");
 //
 //            publishID = 0;
 //        }
@@ -638,16 +914,16 @@ static void messageArrived(MessageData* data) {
     buf[data->message->payloadlen] = 0;
 
     tok = strtok(buf, NULL);
-    CLI_Write(tok);
-    CLI_Write("\n\r");
+    UART0_OutString(tok);
+    UART0_OutString("\n\r");
 
     if(!strcmp(tok,"go")) {
-        CLI_Write("Input GO!\r\n");
+        UART0_OutString("Input GO!\r\n");
         // TODO:
          Motor_Forward(5000,5000);
     }
     else if(!strcmp(tok,"stop")) {
-        CLI_Write("Input Stop\n\r");
+        UART0_OutString("Input Stop\n\r");
         // TODO:
         Motor_Forward(0,0);
     }
@@ -694,9 +970,9 @@ void PORT1_IRQHandler(void)
         {
             S2buttonDebounce = 1;
 
-            CLI_Write(" MAC Address: \n\r ");
-            CLI_Write(macStr);
-            CLI_Write("\n\r");
+            UART0_OutString(" MAC Address: \n\r ");
+            UART0_OutString(macStr);
+            UART0_OutString("\n\r");
 
             MAP_Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
         }
@@ -905,8 +1181,8 @@ static _i32 initializeAppVariables()
 */
 static void displayBanner()
 {
-    CLI_Write("\n\r\n\r");
-    CLI_Write(" MQTT Twitter Controlled RGB LED - Version ");
-    CLI_Write(APPLICATION_VERSION);
-    CLI_Write("\n\r*******************************************************************************\n\r");
+    UART0_OutString("\n\r\n\r");
+    UART0_OutString(" MQTT Twitter Controlled RGB LED - Version ");
+    UART0_OutString(APPLICATION_VERSION);
+    UART0_OutString("\n\r*******************************************************************************\n\r");
 }
