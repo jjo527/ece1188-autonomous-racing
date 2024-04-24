@@ -56,10 +56,132 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "../inc/UART0.h"
 #include "../inc/SSD1306.h"
 #include "../inc/FFT.h"
+
+#include <stdint.h>
+#include <stdio.h>
+
+#include <string.h>
+#include "msp.h"
+#include "../inc/Clock.h"
+#include "../inc/CortexM.h"
+#include "../inc/PWM.h"
+#include "../inc/LaunchPad.h"
+#include "../inc/UART0.h"
+#include "../inc/Motor.h"
+#include "../inc/Bump.h"
+#include "../inc/ADC14.h"
+#include "../inc/TimerA1.h"
+#include "../inc/IRDistance.h"
+#include "../inc/Nokia5110.h"
+#include "../inc/LPF.h"
+#include "../inc/SysTickInts.h"
+#include "../inc/Tachometer.h"
+#include "../inc/Reflectance.h"
+#include "../inc/UART0.h"
+
+#include "../inc/SysTickInts.h"
+
+
+// --------------------------------------
+
+
+// --------------------------------------
+
+
+
+#include "PID_Motor_Control.h"
+
+//void SysTick_Handler(void) {
+//
+//    int a = 1;
+//    int b = 10 + a;
+//}
+
+
+#include "mqtt_main.h"
+
+// Standard includes
+#include <stdlib.h>
+#include <string.h>
+
+#include "driverlib.h"
+#include "simplelink.h"
+#include "sl_common.h"
+#include "MQTTClient.h"
+
+// --
+
+#define TACHBUFF 10                      // number of elements in tachometer array
+uint16_t LeftTach[TACHBUFF];             // tachometer period of left wheel (number of 0.0833 usec cycles to rotate 1/360 of a wheel rotation)
+enum TachDirection LeftDir;              // direction of left rotation (FORWARD, STOPPED, REVERSE)
+int32_t LeftSteps;                       // number of tachometer steps of left wheel (units of 220/360 = 0.61 mm traveled)
+uint16_t RightTach[TACHBUFF];            // tachometer period of right wheel (number of 0.0833 usec cycles to rotate 1/360 of a wheel rotation)
+enum TachDirection RightDir;             // direction of right rotation (FORWARD, STOPPED, REVERSE)
+int32_t RightSteps;                      // number of tachometer steps of right wheel (units of 220/360 = 0.61 mm traveled)
+uint16_t ActualL;                        // actual rotations per minute
+uint16_t ActualR;                        // actual rotations per minute
+
+// ----
+// USER VARIABLES
+
+uint16_t leftSpeedMax = 0;
+uint16_t rightSpeedMax = 0;
+uint16_t numCrashes = 0;
+uint8_t collisionGuard = 0;
+
+uint32_t loopCount = 0;
+
+Network n;
+Client hMQTTClient;     // MQTT Client
+
+int16_t distanceSensorBuf [3][200];
+uint16_t distanceSensorBufIndex = 0;
+
+// --------------------------------------
+
+uint8_t stop = 0;
+
+uint64_t g_count = 0;
+int g_delay_systick = 1;
+uint8_t g_LineResult;
+char command;
+char newCommand;
+
+unsigned long MilliTimer;
+
+void SysTick_Handler(void) {
+    MilliTimer++;
+
+//    if (g_count % 10 == 0) {
+//        Reflectance_Start();
+//        g_count +=1;
+//    }else if (g_count % (10 + g_delay_systick) == 0) {
+//        g_LineResult = Reflectance_End();
+//        g_count = 0;
+//    }else{
+//        g_count += 1;
+//    }
+
+    newCommand = UART0_InChar();
+
+    if(newCommand == 'g'){
+        command = newCommand;
+        stop = 0;
+    }else if(newCommand == 's'){
+        command = newCommand;
+        stop = 1;
+    }
+
+}
+
+// --------------------------------------
+
+
 // Select one of the following three output possibilities
 // define USENOKIA
 #define USEOLED 1
 #define USEUART 1
+
 
 #ifdef USENOKIA
 // this batch configures for LCD
@@ -540,12 +662,35 @@ void Controller(void) { // runs at 100 Hz
         Motor_Forward(UL, UR);
 
         // Drive motors forward with adjusted PWM signals
-        char motorValues[50];
-        char distances[100];
-        snprintf(motorValues, 50, " Left Motor: %d , Right Motor: %d\n", UL, UR);
-        snprintf(distances, 100, " Left Distance: %d , Right Distance: %d , Center Distance: %d\n"  , LeftDistance, RightDistance, CenterDistance);
-        UART0_OutString(motorValues);
-        UART0_OutString(distances);
+//         // UNCOMMENT FOR PID DEBUG
+//         char motorValues[50];
+//         char distances[100];
+//         snprintf(motorValues, 50, " Left Motor: %d , Right Motor: %d\n", UL, UR);
+//         snprintf(distances, 100, " Left Distance: %d , Right Distance: %d , Center Distance: %d\n"  , LeftDistance, RightDistance, CenterDistance);
+//         UART0_OutString(motorValues);
+//         UART0_OutString(distances);
+        char motorValues[100];
+        Tachometer_Get(&LeftTach[0], &LeftDir, &LeftSteps, &RightTach[0], &RightDir, &RightSteps);
+//        Tachometer_Get(&LeftTach[1], &LeftDir, &LeftSteps, &RightTach[1], &RightDir, &RightSteps);
+//        Tachometer_Get(&LeftTach[2], &LeftDir, &LeftSteps, &RightTach[2], &RightDir, &RightSteps);
+//        ActualL = 2000000/avg(LeftTach, TACHBUFF);
+//        ActualR = 2000000/avg(RightTach, TACHBUFF);
+        ActualL = 2000000/LeftTach[0];
+        ActualR = 2000000/RightTach[0];
+
+        if (ActualL > leftSpeedMax && ActualL - leftSpeedMax < 100) {
+            leftSpeedMax = ActualL;
+        }
+
+        if (ActualR > rightSpeedMax && ActualR - rightSpeedMax < 100) {
+            rightSpeedMax = ActualR;
+        }
+
+        // TODO: reenable debug
+//        snprintf(motorValues, 100, " Left PWM: %d , Right PWM: %d, Left Actual: %d, Right Actual: %d\n\r", UL, UR, ActualL, ActualR);
+//        UART0_OutString(motorValues);
+
+        Motor_Forward(UL, UR);
 
     }
 }
@@ -577,15 +722,36 @@ void Pause(void){int i;
 void main(void){ // wallFollow wall following implementation
   int i = 0;
   uint32_t channel = 1;
-  DisableInterrupts();
+//  DisableInterrupts();
   Clock_Init48MHz();
   BumpInt_Init(&collision);
-  LaunchPad_Init(); // built-in switches and LEDs
+
+  // ---------------------------------
+  // ADDED CODE
+
+  uint32_t row;
+  uint32_t col;
+  for (row = 0; row < 3; row++) {
+      for (col = 0; col < 200; col++) {
+          distanceSensorBuf[row][col] = -1;
+      }
+  }
+
+  Init();
+  OutString("Test!\n\r");
+  Tachometer_Init();
+  mqtt_init();
+  UART0_OutString(" after\n\r");
+
+  // ---------------------------------
+
   Motor_Stop(); // initialize and stop
   Mode = 1;
+
   I2CB1_Init(30); // baud rate = 12MHz/30=400kHz
-  Init();
   Motor_Init();
+  SysTick_Init(4800,2);
+
   Clear();
   OutString("OPT3101");
   SetCursor(0, 1);
@@ -602,6 +768,7 @@ void main(void){ // wallFollow wall following implementation
   OutString("Er=");
   SetCursor(0, 7);
   OutString("U =");
+
   OPT3101_Init();
   OPT3101_Setup();
   OPT3101_CalibrateInternalCrosstalk();
@@ -612,54 +779,108 @@ void main(void){ // wallFollow wall following implementation
   LPF_Init2(100,8);
   LPF_Init3(100,8);
   UR = UL = PWMNOMINAL; //initial power
-//  Pause();
   EnableInterrupts();
   while(1){
-    if(TxChannel <= 2){ // 0,1,2 means new data
-      if(TxChannel==0){
-        if(Amplitudes[0] > 1000){
-          LeftDistance = FilteredDistances[0] = Left(LPF_Calc(Distances[0]));
-        }else{
-          LeftDistance = FilteredDistances[0] = 500;
+      if(command == 'g'){
+
+        if(Reflectance_Read(1000) == 0x00){
+
+            Motor_Forward(5000, 5000);
+            Clock_Delay1ms(10);
+
+              while(!stop){
+                  UART0_OutString("Finished Race!\n\r");
+                  if(Reflectance_Read(1000) != 0x00){
+                      Motor_Forward(0,0);
+                  }
+              }
+          }
+
+        if(TxChannel <= 2){ // 0,1,2 means new data
+          if(TxChannel==0){
+            if(Amplitudes[0] > 1000){
+              LeftDistance = FilteredDistances[0] = Left(LPF_Calc(Distances[0]));
+            }else{
+              LeftDistance = FilteredDistances[0] = 500;
+            }
+            if(Amplitudes[1] > 1000){
+              CenterDistance = FilteredDistances[1] = LPF_Calc2(Distances[1]);
+            }else{
+              CenterDistance = FilteredDistances[1] = 500;
+            }
+          }else {
+            if(Amplitudes[2] > 1000){
+              RightDistance = FilteredDistances[2] = Right(LPF_Calc3(Distances[2]));
+            }else{
+              RightDistance = FilteredDistances[2] = 500;
+            }
+          }
+
+    //      SetCursor(2, TxChannel+1);
+    //      OutUDec(FilteredDistances[TxChannel]); OutChar(','); OutUDec(Amplitudes[TxChannel]);
+          TxChannel = 3; // 3 means no data
+          channel = (channel+1)%3;
+          OPT3101_StartMeasurementChannel(channel);
+          i = i + 1;
         }
-      }else if(TxChannel==1){
-        if(Amplitudes[1] > 1000){
-          CenterDistance = FilteredDistances[1] = LPF_Calc2(Distances[1]);
-        }else{
-          CenterDistance = FilteredDistances[1] = 500;
+        Controller();
+
+
+        uint32_t thing = 2000;
+          loopCount++;
+          if (loopCount % thing == 0) {
+              char outStr[30];
+              snprintf(outStr, 30, "count = %d\r\n", distanceSensorBufIndex);
+              UART0_OutString(outStr);
+
+              const uint16_t maxVal = 2500;
+              distanceSensorBuf[0][distanceSensorBufIndex] = (LeftDistance < maxVal)   ? LeftDistance : maxVal;
+              distanceSensorBuf[1][distanceSensorBufIndex] = (CenterDistance < maxVal) ? CenterDistance : maxVal;
+              distanceSensorBuf[2][distanceSensorBufIndex] = (RightDistance < maxVal)  ? RightDistance : maxVal;
+
+              if (distanceSensorBufIndex < 199) {
+                  distanceSensorBufIndex++;
+              }
+          }
+
+
+        if(i >= 100){
+          i = 0;
+    //      SetCursor(3, 5);
+    //      OutUDec(SetPoint);
+    //      SetCursor(3, 6);
+    //      OutSDec(Error);
+    //      SetCursor(3, 7);
+    //      OutUDec(UL); OutChar(','); OutUDec(UR);
         }
-      }else {
-        if(Amplitudes[2] > 1000){
-          RightDistance = FilteredDistances[2] = Right(LPF_Calc3(Distances[2]));
-        }else{
-          RightDistance = FilteredDistances[2] = 500;
-        }
+
+        WaitForInterrupt();
+      }else if(command == 's'){
+          Motor_Forward(0,0);
+          stop = 1;
       }
 
-      SetCursor(2, TxChannel+1);
-      OutUDec(FilteredDistances[TxChannel]); OutChar(','); OutUDec(Amplitudes[TxChannel]);
-      TxChannel = 3; // 3 means no data
-      channel = (channel+1)%3;
-      OPT3101_StartMeasurementChannel(channel);
-      i = i + 1;
-    }
-    Controller();
-    if(i >= 100){
-      i = 0;
-      SetCursor(3, 5);
-      OutUDec(SetPoint);
-      SetCursor(3, 6);
-      OutSDec(Error);
-      SetCursor(3, 7);
-      OutUDec(UL); OutChar(','); OutUDec(UR);
-    }
+      if (stop) {
+         Motor_Forward(0,0);
+         UART0_OutString("Sending Stop Data\r\n");
+         message(1);
+         stop = 0;
+         collisionGuard = 0;
 
-    WaitForInterrupt();
+         while(stop) {}
+     }
   }
 }
 
-
 void collision(uint8_t bump){
-    Motor_Stop(); //STOP IF BUMP IS DETECTED
+    UART0_OutString("Collision Detected \n\r");
+    if (!collisionGuard) {
+        numCrashes++;
+    }
+
+
+    Motor_Forward(0,0); //STOP IF BUMP IS DETECTED
+
+   UART0_OutString(" DONE \n\r");
 }
 

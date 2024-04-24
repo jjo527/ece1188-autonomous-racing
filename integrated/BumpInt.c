@@ -75,6 +75,25 @@ void BumpInt_Init(void(*task)(uint8_t)){
     NVIC->IP[8] = (NVIC->IP[8]&0x00FFFFFF)|0x40000000;  // Priority 2
     NVIC->ISER[1] = 0x00000040;                         // Enable interrupt 38 in NVIC
 }
+
+
+void Bump_Init() {
+    // Bump Switches Init //
+    P4->SEL0 &= ~0xED;
+    P4->SEL1 &= ~0xED;   //configure P4.0, P4.2, P4.3, P4.5, P4.6, P4.7 as GPIO
+    P4->DIR &= ~0xED;    //make them inputs
+    P4->REN |= 0xED;     //enable pull resistors on P4.0, P4.2, P4.3, P4.5, P4.6, P4.7
+    P4->OUT |= 0xED;     //make them pull-up
+
+    // Falling Edge Interrupt Init //
+    P4->IES |= 0xED;        // P4.0, P4.2, P4.3, P4.5, P4.6, P4.7 are falling edge events
+    P4->IFG &= ~0xED;       // Clear interrupt flags
+    P4->IE |= 0xED;         // Arm P4.0, P4.2, P4.3, P4.5, P4.6, P4.7 interrupts
+    NVIC->IP[8] = (NVIC->IP[8]&0x00FFFFFF)|0x40000000;  // Priority 2
+    NVIC->ISER[1] = 0x00000040;                         // Enable interrupt 38 in NVIC
+}
+
+
 // Read current state of 6 switches
 // Returns a 6-bit positive logic result (0 to 63)
 // bit 5 Bump5
@@ -96,4 +115,6 @@ uint8_t Bump_Read(void){
 void PORT4_IRQHandler(void){
 
     collision_handle(Bump_Read());
+    P4->IFG &= ~0xED;
+
 }

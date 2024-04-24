@@ -43,15 +43,15 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include <stdint.h>
 #include "msp.h"
 #include <stdio.h>
-#include "..\inc\fixed.h"
-#include "..\inc\odometry.h"
-#include "..\inc\Motor.h"
-#include "..\inc\Tachometer.h"
-#include "..\inc\SSD1306.h"
-#include "..\inc\LaunchPad.h"
-#include "..\inc\bump.h"
-#include "..\inc\clock.h"
-#include "..\inc\blinker.h"
+#include "../inc/fixed.h"
+#include "../inc/odometry.h"
+#include "../inc/Motor.h"
+#include "../inc/Tachometer.h"
+#include "../inc/SSD1306.h"
+#include "../inc/LaunchPad.h"
+#include "../inc/bump.h"
+#include "../inc/clock.h"
+#include "../inc/blinker.h"
 
 int32_t Robotx,Roboty; // position in 0.0001cm
 int32_t Robottheta;    // direction units 2*pi/16384 radians (-pi to +pi)
