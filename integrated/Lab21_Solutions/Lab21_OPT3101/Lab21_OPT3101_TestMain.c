@@ -580,7 +580,7 @@ float Kd=0.1;  // derivative controller gain
 int32_t UR, UL;  // PWM duty 0 to 14,998
 
 #define TOOCLOSE 120 //was 200
-#define DESIRED 500 //was 250+
+#define DESIRED 250 //was 250+
 int32_t SetPoint = 0; // mm //was 250
 int32_t LeftDistance,CenterDistance,RightDistance; // mm
 #define TOOFAR 400 // was 400
@@ -606,10 +606,6 @@ void Controller(void) { // runs at 100 Hz
 
 
 
-       /* while(RightDistance<TOOCLOSE){
-                    UR = PWMNOMINAL;
-                    UL = 0;
-                }*/
 
 
         // Proportional term
@@ -643,12 +639,16 @@ void Controller(void) { // runs at 100 Hz
             UL = PWMNOMINAL + SWING;
         }
 
-        if(LeftDistance < 200){
+        if (LeftDistance > 220) {
+            UR += 500;
+        }
+
+        if(LeftDistance < 160){
             UR = 0;
             UL =PWMNOMINAL;
         }
 
-        if(RightDistance < 200){
+        if(RightDistance < 160){
             UR = PWMNOMINAL;
             UL = 0;
         }
@@ -846,6 +846,9 @@ void main(void){ // wallFollow wall following implementation
               if (distanceSensorBufIndex < 199) {
                   distanceSensorBufIndex++;
               }
+
+              UART0_OutString("Pinging MQTT Server");
+              message(2);
           }
 
 

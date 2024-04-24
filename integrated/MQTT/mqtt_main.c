@@ -349,6 +349,32 @@ void sendDistanceSignal() {
     UART0_OutString("Sent the distance sensor csv to Node Red! \n\r");
 }
 
+void sendDummySignal() {
+    UART0_OutString(" in sendDummySignal\n\r");
+    int rc;
+    rc = MQTTYield(&hMQTTClient, 10);
+    if (rc != 0) {
+        UART0_OutString(" MQTT failed to yield \n\r");
+        LOOP_FOREVER();
+    }
+
+    MQTTMessage msg;
+    msg.dup = 0;
+    msg.id = 0;
+    msg.payload = "yeet";
+    msg.payloadlen = 5;
+    msg.qos = QOS0;
+    msg.retained = 0;
+    rc = MQTTPublish(&hMQTTClient, "daredevil_dummy", &msg);
+
+    if (rc != 0) {
+        UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
+        LOOP_FOREVER();
+    }
+    UART0_OutString("Sent the dummy signal! \n\r");
+
+}
+
 
 
 void message(uint8_t sel) {
@@ -414,6 +440,7 @@ void message(uint8_t sel) {
             sendDistanceSignal();
             break;
         case 2:
+            sendDummySignal();
             break;
         default:
             sendStartSignal();
