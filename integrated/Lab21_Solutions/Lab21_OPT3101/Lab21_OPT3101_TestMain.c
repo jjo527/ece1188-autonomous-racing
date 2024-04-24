@@ -127,8 +127,6 @@ uint16_t ActualR;                        // actual rotations per minute
 uint16_t leftSpeedMax = 0;
 uint16_t rightSpeedMax = 0;
 uint16_t numCrashes = 0;
-uint8_t collisionGuard = 0;
-
 uint32_t loopCount = 0;
 
 Network n;
@@ -136,6 +134,8 @@ Client hMQTTClient;     // MQTT Client
 
 int16_t distanceSensorBuf [3][200];
 uint16_t distanceSensorBufIndex = 0;
+uint8_t sawWhitePaper = 0;
+uint8_t whitePaperCount = 0;
 
 // --------------------------------------
 
@@ -750,17 +750,22 @@ void main(void){ // wallFollow wall following implementation
   while(1){
       if(command == 'g'){
 
-        if(Reflectance_Read(1000) == 0x00){
+        if(Reflectance_Read(1000) == 0x00 && !sawWhitePaper){
+            whitePaperCount++;
 
-            Motor_Forward(5000, 5000);
-            Clock_Delay1ms(10);
+            if (whitePaperCount >= 10) {
+                sawWhitePaper = 1;
+            }
 
-              while(!stop){
-                  UART0_OutString("Finished Race!\n\r");
-                  if(Reflectance_Read(1000) != 0x00){
-                      Motor_Forward(0,0);
-                  }
-              }
+        }
+        else {
+            whitePaperCount = 0;
+        }
+
+        if (Reflectance_Read(1000) != 0x00 & sawWhitePaper){
+              UART0_OutString("Finished Race!\n\r");
+              Motor_Forward(0,0);
+              stop = 1;
           }
 
         if(TxChannel <= 2){ // 0,1,2 means new data
@@ -793,7 +798,7 @@ void main(void){ // wallFollow wall following implementation
         Controller();
 
 
-        uint32_t thing = 2000;
+        uint32_t thing = 1000;
           loopCount++;
           if (loopCount % thing == 0) {
               char outStr[30];
@@ -831,23 +836,22 @@ void main(void){ // wallFollow wall following implementation
          Motor_Forward(0,0);
          UART0_OutString("Sending Stop Data\r\n");
          message(1);
-         stop = 0;
-         collisionGuard = 0;
-
          while(stop) {}
+
+
      }
   }
 }
 
 void collision(uint8_t bump){
     UART0_OutString("Collision Detected \n\r");
-    if (!collisionGuard) {
-        numCrashes++;
-    }
+    numCrashes++;
 
-
-    Motor_Forward(0,0); //STOP IF BUMP IS DETECTED
-
+    Motor_Forward(0,0);
+    Clock_Delay1ms(500);
+    Motor_Backward(3000,3000); //STOP IF BUMP IS DETECTED
+    Clock_Delay1ms(500);
    UART0_OutString(" DONE \n\r");
+   stop = 0;
 }
 
