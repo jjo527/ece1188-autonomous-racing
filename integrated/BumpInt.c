@@ -115,4 +115,6 @@ uint8_t Bump_Read(void){
 void PORT4_IRQHandler(void){
 
     collision_handle(Bump_Read());
+    P4->IFG &= ~0xED;
+
 }

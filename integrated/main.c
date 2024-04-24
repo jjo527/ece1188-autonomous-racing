@@ -70,7 +70,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 #define SIZE 20
 
 extern Client hMQTTClient;
-extern
+//extern
 
 uint8_t CollisionData, CollisionFlag;  // mailbox
 void HandleCollision2(uint8_t bumpSensor){
@@ -93,7 +93,7 @@ void main_main(void) {
         int rc;
         rc = MQTTYield(&hMQTTClient, 10);
         if (rc != 0) {
-            CLI_Write(" MQTT failed to yield \n\r");
+            UART0_OutString(" MQTT failed to yield \n\r");
             LOOP_FOREVER();
         }
 
@@ -107,12 +107,12 @@ void main_main(void) {
         rc = MQTTPublish(&hMQTTClient, "daredevil_start_time", &msg);
 
         if (rc != 0) {
-            CLI_Write(" Failed to publish unique ID to MQTT broker \n\r");
+            UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
             LOOP_FOREVER();
         }
-        CLI_Write(" Published Data to Server 2! \n\r");
+        UART0_OutString(" Published Data to Server 2! \n\r");
 
-        CLI_Write(" DONE \n\r");
+        UART0_OutString(" DONE \n\r");
 
         while(1) {}
 
