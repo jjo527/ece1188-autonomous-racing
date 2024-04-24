@@ -758,9 +758,11 @@ void main(void){ // wallFollow wall following implementation
           char outStr[30];
           snprintf(outStr, 30, "count = %d\r\n", distanceSensorBufIndex);
           UART0_OutString(outStr);
-          distanceSensorBuf[0][distanceSensorBufIndex] = LeftDistance;
-          distanceSensorBuf[1][distanceSensorBufIndex] = CenterDistance;
-          distanceSensorBuf[2][distanceSensorBufIndex] = RightDistance;
+
+          const uint16_t maxVal = 2500;
+          distanceSensorBuf[0][distanceSensorBufIndex] = (LeftDistance < maxVal)   ? LeftDistance : maxVal;
+          distanceSensorBuf[1][distanceSensorBufIndex] = (CenterDistance < maxVal) ? CenterDistance : maxVal;
+          distanceSensorBuf[2][distanceSensorBufIndex] = (RightDistance < maxVal)  ? RightDistance : maxVal;
 
           if (distanceSensorBufIndex < 199) {
               distanceSensorBufIndex++;

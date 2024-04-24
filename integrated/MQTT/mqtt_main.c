@@ -313,46 +313,39 @@ void sendDistanceSignal() {
     }
 
 
-    UART0_OutString("Start Formatting Distance data\n\n\r");
+    UART0_OutString("Start Sending Distance data\n\n\r");
     uint32_t i;
-    char csvBuf [35] = "LeftTach,MiddleTach,RightTach\n\r";
-//    for (i = 0; i < 200; i++) {
-//        if (distanceSensorBuf[0][i] == -1 || i >= 3) {
-//            UART0_OutString("Finished Formatting Distance data\n\n\r");
-//            break;
-//        }
-//        char lineBuf [20];
-//        snprintf(lineBuf, 20, "%d,%d,%d\n\r", distanceSensorBuf[0][i],distanceSensorBuf[1][i],distanceSensorBuf[2][i]);
-//        strcat(csvBuf,lineBuf);
-//    }
+    for (i = 0; i < 200; i++) {
+        if (distanceSensorBuf[0][i] == -1) {
+            break;
+        }
 
-    UART0_OutString("###################################\n\r");
-    UART0_OutString("SENDING CSV\n\n\r");
-    UART0_OutString(csvBuf);
-    UART0_OutString("###################################\n\r");
+        char lineBuf [20];
+        uint8_t newline = 10;
+        snprintf(lineBuf, 20, "%d,%d,%d", distanceSensorBuf[0][i],distanceSensorBuf[1][i],distanceSensorBuf[2][i]);
+//        strcat(lineBuf, &newline);
 
-    MQTTMessage msg;
-    msg.dup = 0;
-    msg.id = 0;
-    msg.payload = csvBuf;
-    msg.payloadlen = 35;
-    msg.qos = QOS0;
-    msg.retained = 0;
-    rc = MQTTPublish(&hMQTTClient, "daredevil_tach", &msg);
+        UART0_OutString(lineBuf);
 
-//    MQTTMessage msg;
-//        msg.dup = 0;
-//        msg.id = 0;
-//        msg.payload = "yeet";
-//        msg.payloadlen = 5;
-//        msg.qos = QOS0;
-//        msg.retained = 0;
-//        rc = MQTTPublish(&hMQTTClient, "daredevil_stop_time", &msg);
+        MQTTMessage msg;
+        msg.dup = 0;
+        msg.id = 0;
+        msg.payload = lineBuf;
+        msg.payloadlen = 20;
+        msg.qos = QOS0;
+        msg.retained = 0;
+//        rc = MQTTPublish(&hMQTTClient, "daredevil_crashes", &msg);
+         rc = MQTTPublish(&hMQTTClient, "daredevil_tach", &msg);
 
-    if (rc != 0) {
-        UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
-        LOOP_FOREVER();
+        if (rc != 0) {
+            UART0_OutString(" Failed to publish unique ID to MQTT broker \n\r");
+            LOOP_FOREVER();
+        }
+        char debugBuf [30];
+        snprintf(debugBuf, 30, "Sent distance csv line %d\n\r", i);
+        UART0_OutString(debugBuf);
     }
+
     UART0_OutString("Sent the distance sensor csv to Node Red! \n\r");
 }
 
